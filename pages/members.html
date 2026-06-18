@@ -178,49 +178,49 @@
                   placeholder="Street, city"></textarea>
               </div>
 
-              <div class="col-md-4">
-                <label class="form-label">Country Code</label>
-                <select id="fieldCountryCode" class="form-select">
-                  <option value="+94">🇱🇰 Sri Lanka (+94)</option>
-                  <option value="+61">🇦🇺 Australia (+61)</option>
-                  <option value="+1">🇺🇸 USA (+1)</option>
-                  <option value="+44">🇬🇧 UK (+44)</option>
-                  <option value="+971">🇦🇪 UAE (+971)</option>
-                  <option value="+91">🇮🇳 India (+91)</option>
-                  <option value="+65">🇸🇬 Singapore (+65)</option>
-                  <option value="+81">🇯🇵 Japan (+81)</option>
-                  <option value="+49">🇩🇪 Germany (+49)</option>
-                </select>
-              </div>
-
+              <select id="fieldCountryCode" class="form-select">
+                <option value="+94">🇱🇰 Sri Lanka (+94)</option>
+                <option value="+61">🇦🇺 Australia (+61)</option>
+                <option value="+1">🇺🇸 USA (+1)</option>
+                <option value="+44">🇬🇧 UK (+44)</option>
+                <option value="+971">🇦🇪 UAE (+971)</option>
+                <option value="+91">🇮🇳 India (+91)</option>
+                <option value="+65">🇸🇬 Singapore (+65)</option>
+                <option value="+81">🇯🇵 Japan (+81)</option>
+                <option value="+49">🇩🇪 Germany (+49)</option>
+                <option value="+82">🇰🇷 South Korea (+82)</option>
+                <option value="+90">🇹🇷 Turkey (+90)</option>
+                <option value="+972">🇮🇱 Israel (+972)</option>
+              </select>
               <div class="col-md-6">
                 <label class="form-label" for="fieldPhone">Phone Number <span class="text-danger">*</span></label>
                 <div class="input-group">
-                  <span class="input-group-text">+94</span>
+                  <span class="input-group-text" id="phoneCode">+94</span>
                   <input type="tel" class="form-control" id="fieldPhone" name="Phone" required placeholder="771234567">
                 </div>
               </div>
               <div class="col-md-6">
                 <label class="form-label" for="fieldWhatsApp">WhatsApp Number</label>
                 <div class="input-group">
-                  <span class="input-group-text">+94</span>
+                  <span class="input-group-text" id="whatsappCode">+94</span>
                   <input type="tel" class="form-control" id="fieldWhatsApp" name="WhatsApp" placeholder="771234567">
                 </div>
-                <div class="form-check mt-1">
-                  <input class="form-check-input" type="checkbox" id="sameAsPhone" checked>
-                  <label class="form-check-label small" for="sameAsPhone">Same as phone number</label>
-                </div>
+              </div>
+              <div class="form-check mt-1">
+                <input class="form-check-input" type="checkbox" id="sameAsPhone" checked>
+                <label class="form-check-label small" for="sameAsPhone">Same as phone number</label>
               </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="btnSaveMember"><i class="bi bi-save-fill me-1"></i>Save
-              Member</button>
-          </div>
-        </form>
       </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btnSaveMember"><i class="bi bi-save-fill me-1"></i>Save
+          Member</button>
+      </div>
+      </form>
     </div>
+  </div>
   </div>
 
   <!-- Delete confirm modal -->

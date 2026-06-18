@@ -248,6 +248,13 @@ function clearAllFieldErrors() {
 // ---------------------------------------------------------------------------
 
 function wireFormEvents() {
+  const countryCodeSelect = document.getElementById('fieldCountryCode');
+
+  countryCodeSelect.addEventListener('change', function () {
+    document.getElementById('phoneCode').textContent = this.value;
+    document.getElementById('whatsappCode').textContent = this.value;
+  });
+
   document.getElementById('btnAddMember').addEventListener('click', openAddModal);
 
   document.getElementById('sameAsPhone').addEventListener('change', e => {
