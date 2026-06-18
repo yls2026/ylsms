@@ -9,7 +9,7 @@
  * only in memory, so every page works for preview purposes immediately.
  */
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycby0RPLv0d14ZAlagREJvwnelJ9GX0iTVOP2yIOogIBrFDWc0ptjnl1gdLTzohyYKnwR/exec',
+  API_URL: 'PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE',
   ORG_NAME_FALLBACK: 'Youth Lions Society',
   DEMO_MODE: true // automatically set to false once API_URL is a real URL
 };
