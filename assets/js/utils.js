@@ -75,18 +75,85 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
-function isValidPhone(phone) {
-  if (!phone) return false;
-  const digits = String(phone).replace(/[^\d]/g, '');
-  // Sri Lankan mobile/landline numbers: 9 digits after the leading 0/94
-  return digits.length >= 9 && digits.length <= 12;
+/** Validates just the national number portion (no country code), 6-12 digits. */
+function isValidPhone(number) {
+  if (!number) return false;
+  const digits = String(number).replace(/[^\d]/g, '');
+  return digits.length >= 6 && digits.length <= 12;
 }
 
-function formatPhoneInput(value) {
-  let digits = String(value || '').replace(/[^\d]/g, '');
-  if (digits.indexOf('94') === 0) digits = digits.substring(2);
-  if (digits.indexOf('0') === 0) digits = digits.substring(1);
-  return digits ? '+94' + digits : '';
+/**
+ * Country calling codes for the phone/WhatsApp dropdowns, sorted so the
+ * society's home country appears first. Sorted by code length (longest
+ * first) for parsing convenience — see splitPhoneNumber().
+ */
+const COUNTRY_CODES = [
+  { code: '94', name: 'Sri Lanka', flag: '🇱🇰' },
+  { code: '91', name: 'India', flag: '🇮🇳' },
+  { code: '1', name: 'USA / Canada', flag: '🇺🇸' },
+  { code: '44', name: 'United Kingdom', flag: '🇬🇧' },
+  { code: '61', name: 'Australia', flag: '🇦🇺' },
+  { code: '64', name: 'New Zealand', flag: '🇳🇿' },
+  { code: '65', name: 'Singapore', flag: '🇸🇬' },
+  { code: '60', name: 'Malaysia', flag: '🇲🇾' },
+  { code: '63', name: 'Philippines', flag: '🇵🇭' },
+  { code: '66', name: 'Thailand', flag: '🇹🇭' },
+  { code: '62', name: 'Indonesia', flag: '🇮🇩' },
+  { code: '84', name: 'Vietnam', flag: '🇻🇳' },
+  { code: '95', name: 'Myanmar', flag: '🇲🇲' },
+  { code: '977', name: 'Nepal', flag: '🇳🇵' },
+  { code: '880', name: 'Bangladesh', flag: '🇧🇩' },
+  { code: '92', name: 'Pakistan', flag: '🇵🇰' },
+  { code: '93', name: 'Afghanistan', flag: '🇦🇫' },
+  { code: '960', name: 'Maldives', flag: '🇲🇻' },
+  { code: '971', name: 'UAE', flag: '🇦🇪' },
+  { code: '966', name: 'Saudi Arabia', flag: '🇸🇦' },
+  { code: '974', name: 'Qatar', flag: '🇶🇦' },
+  { code: '973', name: 'Bahrain', flag: '🇧🇭' },
+  { code: '965', name: 'Kuwait', flag: '🇰🇼' },
+  { code: '968', name: 'Oman', flag: '🇴🇲' },
+  { code: '20', name: 'Egypt', flag: '🇪🇬' },
+  { code: '27', name: 'South Africa', flag: '🇿🇦' },
+  { code: '234', name: 'Nigeria', flag: '🇳🇬' },
+  { code: '49', name: 'Germany', flag: '🇩🇪' },
+  { code: '33', name: 'France', flag: '🇫🇷' },
+  { code: '39', name: 'Italy', flag: '🇮🇹' },
+  { code: '34', name: 'Spain', flag: '🇪🇸' },
+  { code: '31', name: 'Netherlands', flag: '🇳🇱' },
+  { code: '86', name: 'China', flag: '🇨🇳' },
+  { code: '81', name: 'Japan', flag: '🇯🇵' },
+  { code: '82', name: 'South Korea', flag: '🇰🇷' },
+  { code: '7', name: 'Russia', flag: '🇷🇺' }
+];
+
+/** Builds "+94 🇱🇰 Sri Lanka" style <option> markup for a <select>. */
+function countryCodeOptionsHtml(selectedCode) {
+  return COUNTRY_CODES.map(c =>
+    `<option value="${c.code}" ${c.code === selectedCode ? 'selected' : ''}>${c.flag} +${c.code} ${escapeHtml(c.name)}</option>`
+  ).join('');
+}
+
+/**
+ * Splits a stored E.164-ish phone string (e.g. "+94771234567") into its
+ * country code and national number, matching against the longest known
+ * calling code first to avoid ambiguous prefixes.
+ */
+function splitPhoneNumber(fullPhone) {
+  const digits = String(fullPhone || '').replace(/[^\d]/g, '');
+  const sorted = [...COUNTRY_CODES].sort((a, b) => b.code.length - a.code.length);
+  for (const c of sorted) {
+    if (digits.startsWith(c.code)) {
+      return { code: c.code, number: digits.slice(c.code.length) };
+    }
+  }
+  return { code: '94', number: digits };
+}
+
+/** Combines a selected country code + national number into "+<code><digits>". */
+function formatPhoneWithCode(code, number) {
+  const digits = String(number || '').replace(/[^\d]/g, '');
+  if (!digits) return '';
+  return `+${code}${digits}`;
 }
 
 function setFieldError(inputEl, message) {

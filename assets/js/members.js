@@ -12,16 +12,23 @@ let editingId = null;
 document.addEventListener('DOMContentLoaded', initMembersPage);
 
 async function initMembersPage() {
-  setTimeout(async () => {
-    const pageTitle = document.getElementById('pageTitle');
-    if (pageTitle) {
-      pageTitle.textContent = 'Members';
-    }
+  document.getElementById('pageTitle').textContent = 'Members';
 
-    wireFilterEvents();
-    wireFormEvents();
-    await loadMembers();
-  }, 200);
+  populateCountryCodeSelects();
+  wireFilterEvents();
+  wireFormEvents();
+  await loadMembers();
+
+  // Auto-open the add modal if linked from a quick action.
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('action') === 'add') {
+    openAddModal();
+  }
+}
+
+function populateCountryCodeSelects() {
+  document.getElementById('fieldPhoneCode').innerHTML = countryCodeOptionsHtml('94');
+  document.getElementById('fieldWhatsAppCode').innerHTML = countryCodeOptionsHtml('94');
 }
 
 async function loadMembers() {
@@ -186,6 +193,8 @@ function openAddModal() {
   document.getElementById('memberForm').reset();
   document.getElementById('fieldId').value = nextSuggestedId();
   document.getElementById('fieldId').removeAttribute('readonly');
+  document.getElementById('fieldPhoneCode').value = '94';
+  document.getElementById('fieldWhatsAppCode').value = '94';
   document.getElementById('sameAsPhone').checked = true;
   clearAlert(document.getElementById('formAlert'));
   clearAllFieldErrors();
@@ -195,8 +204,6 @@ function openAddModal() {
 function openEditModal(id) {
   const member = allMembers.find(m => m.ID === id);
   if (!member) return;
-  const phone = member.Phone || '';
-  const whatsapp = member.WhatsApp || '';
   editingId = id;
   document.getElementById('memberModalLabel').innerHTML = '<i class="bi bi-pencil-fill me-2"></i>Edit Member';
   clearAlert(document.getElementById('formAlert'));
@@ -210,12 +217,13 @@ function openEditModal(id) {
   document.getElementById('fieldGender').value = member.Gender || '';
   document.getElementById('fieldEmail').value = member.Email || '';
   document.getElementById('fieldAddress').value = member.Address || '';
-
-  document.getElementById('fieldPhone').value =
-    phone.replace(/^\+\d{1,4}/, '');
-
-  document.getElementById('fieldWhatsApp').value =
-    whatsapp.replace(/^\+\d{1,4}/, ''); document.getElementById('sameAsPhone').checked = member.Phone === member.WhatsApp;
+  const phoneParts = splitPhoneNumber(member.Phone);
+  const waParts = splitPhoneNumber(member.WhatsApp);
+  document.getElementById('fieldPhoneCode').value = phoneParts.code;
+  document.getElementById('fieldPhone').value = phoneParts.number;
+  document.getElementById('fieldWhatsAppCode').value = waParts.code;
+  document.getElementById('fieldWhatsApp').value = waParts.number;
+  document.getElementById('sameAsPhone').checked = member.Phone === member.WhatsApp;
 
   new bootstrap.Modal(document.getElementById('memberModal')).show();
 }
@@ -252,38 +260,28 @@ function clearAllFieldErrors() {
 // FORM EVENTS / VALIDATION / SUBMIT
 // ---------------------------------------------------------------------------
 
+function syncWhatsAppWithPhone() {
+  document.getElementById('fieldWhatsAppCode').value = document.getElementById('fieldPhoneCode').value;
+  document.getElementById('fieldWhatsApp').value = document.getElementById('fieldPhone').value;
+}
+
 function wireFormEvents() {
-  const countryCodeSelect = document.getElementById('fieldCountryCode');
-
-  if (countryCodeSelect) {
-    countryCodeSelect.addEventListener('change', function () {
-      document.getElementById('phoneCode').textContent = this.value;
-      document.getElementById('whatsappCode').textContent = this.value;
-    });
-  }
-
-  countryCodeSelect.addEventListener('change', function () {
-    document.getElementById('phoneCode').textContent = this.value;
-    document.getElementById('whatsappCode').textContent = this.value;
-  });
-
   document.getElementById('btnAddMember').addEventListener('click', openAddModal);
 
   document.getElementById('sameAsPhone').addEventListener('change', e => {
-    if (e.target.checked) {
-      document.getElementById('fieldWhatsApp').value = document.getElementById('fieldPhone').value;
-    }
+    if (e.target.checked) syncWhatsAppWithPhone();
   });
-  document.getElementById('fieldPhone').addEventListener('input', e => {
-    if (document.getElementById('sameAsPhone').checked) {
-      document.getElementById('fieldWhatsApp').value = e.target.value;
-    }
+  document.getElementById('fieldPhone').addEventListener('input', () => {
+    if (document.getElementById('sameAsPhone').checked) syncWhatsAppWithPhone();
+  });
+  document.getElementById('fieldPhoneCode').addEventListener('change', () => {
+    if (document.getElementById('sameAsPhone').checked) syncWhatsAppWithPhone();
   });
 
   document.getElementById('memberForm').addEventListener('submit', handleMemberSubmit);
 }
 
-function validateMemberForm(data) {
+function validateMemberForm(data, phoneNumber, whatsappNumber) {
   clearAllFieldErrors();
   let valid = true;
 
@@ -303,7 +301,7 @@ function validateMemberForm(data) {
     setFieldError(document.getElementById('fieldBirthday'), 'Birthday is required.');
     valid = false;
   }
-  if (!isValidPhone(data.Phone)) {
+  if (!isValidPhone(phoneNumber)) {
     setFieldError(document.getElementById('fieldPhone'), 'Enter a valid phone number.');
     valid = false;
   }
@@ -317,7 +315,9 @@ function validateMemberForm(data) {
 async function handleMemberSubmit(e) {
   e.preventDefault();
 
-  const countryCode = document.getElementById('fieldCountryCode').value;
+  const phoneNumber = document.getElementById('fieldPhone').value.trim();
+  const whatsappNumber = document.getElementById('fieldWhatsApp').value.trim() || phoneNumber;
+  const whatsappCode = document.getElementById('fieldWhatsAppCode').value;
 
   const data = {
     ID: document.getElementById('fieldId').value.trim(),
@@ -327,30 +327,11 @@ async function handleMemberSubmit(e) {
     Gender: document.getElementById('fieldGender').value,
     Address: document.getElementById('fieldAddress').value.trim(),
     Email: document.getElementById('fieldEmail').value.trim(),
-
-    Phone: document.getElementById('fieldPhone').value.startsWith('+')
-      ? document.getElementById('fieldPhone').value
-      : countryCode + document.getElementById('fieldPhone').value.replace(/^0+/, ''),
-
-    WhatsApp: (
-      document.getElementById('fieldWhatsApp').value ||
-      document.getElementById('fieldPhone').value
-    ).startsWith('+')
-      ? (
-        document.getElementById('fieldWhatsApp').value ||
-        document.getElementById('fieldPhone').value
-      )
-      : countryCode + (
-        document.getElementById('fieldWhatsApp').value ||
-        document.getElementById('fieldPhone').value
-      ).replace(/^0+/, '')
+    Phone: formatPhoneWithCode(document.getElementById('fieldPhoneCode').value, phoneNumber),
+    WhatsApp: formatPhoneWithCode(whatsappCode, whatsappNumber)
   };
 
-  console.log('DATA TO SAVE:', data);
-
-
-
-  if (!validateMemberForm(data)) {
+  if (!validateMemberForm(data, phoneNumber, whatsappNumber)) {
     showAlert(document.getElementById('formAlert'), 'Please fix the highlighted fields before saving.');
     return;
   }
@@ -373,5 +354,4 @@ async function handleMemberSubmit(e) {
   } finally {
     setButtonLoading(btn, false);
   }
-
 }

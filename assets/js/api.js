@@ -60,12 +60,10 @@ const Api = (() => {
     return prefix + String(max + 1).padStart(3, '0');
   }
 
-  function normalizePhone(phone) {
+  function cleanPhone(phone) {
     if (!phone) return '';
-    let digits = String(phone).replace(/[^\d]/g, '');
-    if (digits.startsWith('94')) return '+' + digits;
-    if (digits.startsWith('0')) digits = digits.substring(1);
-    return '+94' + digits;
+    const raw = String(phone).trim();
+    return raw.startsWith('+') ? '+' + raw.replace(/[^\d]/g, '') : raw;
   }
 
   // -------------------------------------------------------------------
@@ -105,7 +103,7 @@ const Api = (() => {
   async function addMember(member) {
     if (CONFIG.DEMO_MODE) {
       const id = member.ID && member.ID.trim() ? member.ID : generateDemoId();
-      const record = { ...member, ID: id, Phone: normalizePhone(member.Phone), WhatsApp: normalizePhone(member.WhatsApp || member.Phone) };
+      const record = { ...member, ID: id, Phone: cleanPhone(member.Phone), WhatsApp: cleanPhone(member.WhatsApp || member.Phone) };
       demoMembers.push(record);
       demoAttendance.push({ ID: id, Name: member.Name, ...blankMonthObject(false) });
       demoFees.push({ ID: id, Name: member.Name, ...blankMonthObject('Pending') });
@@ -118,7 +116,7 @@ const Api = (() => {
     if (CONFIG.DEMO_MODE) {
       const idx = demoMembers.findIndex(m => m.ID === member.ID);
       if (idx === -1) throw new Error('Member not found');
-      demoMembers[idx] = { ...demoMembers[idx], ...member, Phone: normalizePhone(member.Phone), WhatsApp: normalizePhone(member.WhatsApp || member.Phone) };
+      demoMembers[idx] = { ...demoMembers[idx], ...member, Phone: cleanPhone(member.Phone), WhatsApp: cleanPhone(member.WhatsApp || member.Phone) };
       const att = demoAttendance.find(a => a.ID === member.ID);
       if (att) att.Name = member.Name;
       const fee = demoFees.find(f => f.ID === member.ID);

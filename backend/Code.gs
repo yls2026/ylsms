@@ -313,10 +313,20 @@ function deleteMember(data) {
 
 function normalizePhone_(phone) {
   if (!phone) return '';
-  var digits = String(phone).replace(/[^\d]/g, '');
-  if (digits.indexOf('94') === 0) {
-    return '+' + digits;
+  var raw = String(phone).trim();
+
+  // Already includes a country code (sent as "+<code><number>" by the
+  // frontend's country-code dropdown) — just strip stray characters.
+  if (raw.indexOf('+') === 0) {
+    return '+' + raw.replace(/[^\d]/g, '');
   }
+
+  var digits = raw.replace(/[^\d]/g, '');
+  if (digits.indexOf('00') === 0) {
+    return '+' + digits.substring(2);
+  }
+
+  // Legacy fallback for bare numbers with no country code supplied.
   if (digits.indexOf('0') === 0) {
     digits = digits.substring(1);
   }
