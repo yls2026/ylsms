@@ -12,7 +12,10 @@ let editingId = null;
 document.addEventListener('DOMContentLoaded', initMembersPage);
 
 async function initMembersPage() {
-  document.getElementById('pageTitle').textContent = 'Members';
+  const pageTitle = document.getElementById('pageTitle');
+if (pageTitle) {
+  pageTitle.textContent = 'Members';
+}
 
   wireFilterEvents();
   wireFormEvents();
