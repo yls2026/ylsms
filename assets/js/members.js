@@ -193,10 +193,10 @@ function openAddModal() {
 }
 
 function openEditModal(id) {
-  const phone = member.Phone || '';
-  const whatsapp = member.WhatsApp || '';
   const member = allMembers.find(m => m.ID === id);
   if (!member) return;
+  const phone = member.Phone || '';
+  const whatsapp = member.WhatsApp || '';
   editingId = id;
   document.getElementById('memberModalLabel').innerHTML = '<i class="bi bi-pencil-fill me-2"></i>Edit Member';
   clearAlert(document.getElementById('formAlert'));
