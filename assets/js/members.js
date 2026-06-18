@@ -208,8 +208,8 @@ function openEditModal(id) {
   document.getElementById('fieldGender').value = member.Gender || '';
   document.getElementById('fieldEmail').value = member.Email || '';
   document.getElementById('fieldAddress').value = member.Address || '';
-  document.getElementById('fieldPhone').value = String(member.Phone || '').replace('+94', '');
-  document.getElementById('fieldWhatsApp').value = String(member.WhatsApp || '').replace('+94', '');
+  document.getElementById('fieldPhone').value = member.Phone || '';
+  document.getElementById('fieldWhatsApp').value = member.WhatsApp || '';
   document.getElementById('sameAsPhone').checked = member.Phone === member.WhatsApp;
 
   new bootstrap.Modal(document.getElementById('memberModal')).show();
@@ -298,6 +298,8 @@ function validateMemberForm(data) {
 async function handleMemberSubmit(e) {
   e.preventDefault();
 
+  const countryCode = document.getElementById('fieldCountryCode').value;
+
   const data = {
     ID: document.getElementById('fieldId').value.trim(),
     Position: document.getElementById('fieldPosition').value,
@@ -306,9 +308,20 @@ async function handleMemberSubmit(e) {
     Gender: document.getElementById('fieldGender').value,
     Address: document.getElementById('fieldAddress').value.trim(),
     Email: document.getElementById('fieldEmail').value.trim(),
-    Phone: formatPhoneInput(document.getElementById('fieldPhone').value),
-    WhatsApp: formatPhoneInput(document.getElementById('fieldWhatsApp').value || document.getElementById('fieldPhone').value)
+
+    Phone:
+      countryCode +
+      document.getElementById('fieldPhone').value.replace(/^0+/, ''),
+
+    WhatsApp:
+      countryCode +
+      (
+        document.getElementById('fieldWhatsApp').value ||
+        document.getElementById('fieldPhone').value
+      ).replace(/^0+/, '')
   };
+
+
 
   if (!validateMemberForm(data)) {
     showAlert(document.getElementById('formAlert'), 'Please fix the highlighted fields before saving.');
@@ -333,4 +346,5 @@ async function handleMemberSubmit(e) {
   } finally {
     setButtonLoading(btn, false);
   }
+
 }
