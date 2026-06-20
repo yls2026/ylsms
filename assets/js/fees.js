@@ -5,7 +5,7 @@
 let feeRows = [];
 let feeSettings = { feeAmount: '500' };
 
-document.addEventListener('DOMContentLoaded', initFeesPage);
+onLayoutReady(initFeesPage);
 
 async function initFeesPage() {
   document.getElementById('pageTitle').textContent = 'Membership Fees';

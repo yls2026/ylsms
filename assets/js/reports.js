@@ -7,7 +7,7 @@ let reportAttendance = [];
 let reportFees = [];
 let reportSettings = {};
 
-document.addEventListener('DOMContentLoaded', initReportsPage);
+onLayoutReady(initReportsPage);
 
 async function initReportsPage() {
   document.getElementById('pageTitle').textContent = 'Reports';

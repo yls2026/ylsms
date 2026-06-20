@@ -2,7 +2,7 @@
  * DASHBOARD PAGE LOGIC
  */
 
-document.addEventListener('DOMContentLoaded', initDashboard);
+onLayoutReady(initDashboard);
 
 async function initDashboard() {
   const titleEl = document.getElementById('pageTitle');

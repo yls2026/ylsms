@@ -9,22 +9,20 @@ const PAGE_SIZE = 8;
 let sortState = { field: 'ID', dir: 'asc' };
 let editingId = null;
 
-document.addEventListener('DOMContentLoaded', initMembersPage);
+onLayoutReady(initMembersPage);
 
 async function initMembersPage() {
-  setTimeout(async () => {
-    const pageTitle = document.getElementById('pageTitle');
-    if (pageTitle) {
-      pageTitle.textContent = 'Members';
-    }
+  const pageTitle = document.getElementById('pageTitle');
+  if (pageTitle) {
+    pageTitle.textContent = 'Members';
+  }
 
-    populateCountryCodeSelect(document.getElementById('fieldPhoneCode'), '+94');
-    populateCountryCodeSelect(document.getElementById('fieldWhatsAppCode'), '+94');
+  populateCountryCodeSelect(document.getElementById('fieldPhoneCode'), '+94');
+  populateCountryCodeSelect(document.getElementById('fieldWhatsAppCode'), '+94');
 
-    wireFilterEvents();
-    wireFormEvents();
-    await loadMembers();
-  }, 200);
+  wireFilterEvents();
+  wireFormEvents();
+  await loadMembers();
 }
 
 window.addEventListener('ylsms:authchanged', () => {

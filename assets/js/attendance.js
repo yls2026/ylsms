@@ -4,7 +4,7 @@
 
 let attendanceRows = [];
 
-document.addEventListener('DOMContentLoaded', initAttendancePage);
+onLayoutReady(initAttendancePage);
 
 async function initAttendancePage() {
   document.getElementById('pageTitle').textContent = 'Attendance';

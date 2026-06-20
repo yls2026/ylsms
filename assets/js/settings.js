@@ -2,7 +2,7 @@
  * SETTINGS PAGE LOGIC
  */
 
-document.addEventListener('DOMContentLoaded', initSettingsPage);
+onLayoutReady(initSettingsPage);
 
 async function initSettingsPage() {
   document.getElementById('pageTitle').textContent = 'Settings';

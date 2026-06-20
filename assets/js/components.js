@@ -78,6 +78,36 @@ function showDemoBanner() {
  * Call this once near the top of every page after the DOM is ready.
  * @param {string} basePath '../' from /pages/*.html, '' from root index.html
  */
+/**
+ * RELIABLE PAGE-INIT TIMING
+ * ---------------------------------------------------------------------
+ * The sidebar/navbar are injected by initLayout() via an async fetch,
+ * which can finish AFTER the page's own "DOMContentLoaded" fires. Any
+ * page script that touches navbar/sidebar elements (e.g. #pageTitle)
+ * must wait for both DOM-parsing AND the layout injection to finish.
+ * Call onLayoutReady(yourInitFn) instead of listening to
+ * "DOMContentLoaded" directly to avoid that race condition.
+ */
+let _domReady = false;
+let _layoutReady = false;
+const _readyCallbacks = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+  _domReady = true;
+  _flushReadyCallbacks();
+});
+
+function _flushReadyCallbacks() {
+  if (_domReady && _layoutReady) {
+    while (_readyCallbacks.length) _readyCallbacks.shift()();
+  }
+}
+
+function onLayoutReady(callback) {
+  _readyCallbacks.push(callback);
+  _flushReadyCallbacks();
+}
+
 async function initLayout(basePath) {
   await Promise.all([
     loadComponent(basePath + 'components/sidebar.html', 'sidebar-placeholder'),
@@ -89,4 +119,6 @@ async function initLayout(basePath) {
   showDemoBanner();
   wireAuthUI();
   applyAuthUI();
+  _layoutReady = true;
+  _flushReadyCallbacks();
 }
