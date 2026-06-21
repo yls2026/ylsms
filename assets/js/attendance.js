@@ -53,7 +53,7 @@ function renderAttendanceTable() {
     const presentCount = MONTHS_FULL.filter(m => isPresent(r[m])).length;
     const rate = Math.round((presentCount / 12) * 100);
     const monthCells = MONTHS_FULL.map(m => `
-      <td class="text-center">
+      <td class="text-center attendance-cell ${isPresent(r[m]) ? 'is-present' : 'is-absent'}">
         <input type="checkbox" class="attendance-checkbox" ${isPresent(r[m]) ? 'checked' : ''} ${isAdmin() ? '' : 'disabled'}
           onchange="toggleAttendance('${escapeHtml(r.ID)}', '${m}', this.checked, this)">
       </td>`).join('');

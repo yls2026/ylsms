@@ -126,13 +126,32 @@ function exportReport(type, format) {
     doc.setTextColor(107, 114, 128);
     doc.text(`Generated ${new Date().toLocaleDateString('en-GB')}`, 14, 30);
 
+    // "Positive" words get a green tint, "negative" words get a red tint —
+    // makes Attendance (Present/Absent) and Fees (Paid/Pending) reports
+    // easy to scan at a glance instead of squinting at plain text.
+    const POSITIVE_VALUES = ['Present', 'Paid'];
+    const NEGATIVE_VALUES = ['Absent', 'Pending'];
+
     doc.autoTable({
       head: [headers],
       body: rows,
       startY: 36,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [106, 26, 33], textColor: [255, 255, 255] },
-      alternateRowStyles: { fillColor: [253, 248, 243] }
+      alternateRowStyles: { fillColor: [253, 248, 243] },
+      didParseCell: (data) => {
+        if (data.section !== 'body') return;
+        const value = data.cell.raw;
+        if (POSITIVE_VALUES.includes(value)) {
+          data.cell.styles.fillColor = [220, 245, 224];
+          data.cell.styles.textColor = [22, 101, 52];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (NEGATIVE_VALUES.includes(value)) {
+          data.cell.styles.fillColor = [253, 226, 226];
+          data.cell.styles.textColor = [153, 27, 27];
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
     });
 
     doc.save(`${config.filename}.pdf`);
