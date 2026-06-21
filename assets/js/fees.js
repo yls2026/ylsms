@@ -95,7 +95,7 @@ function renderFeesTable() {
           <select class="fee-select ${status === 'Paid' ? 'is-paid' : 'is-pending'}" ${isAdmin() ? '' : 'disabled'}
             onchange="toggleFee('${escapeHtml(r.ID)}', '${m}', this.value, this)">
             <option value="Paid" ${status === 'Paid' ? 'selected' : ''}>Paid</option>
-            <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option>
+            <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Not Paid</option>
           </select>
         </td>`;
     }).join('');
@@ -122,7 +122,7 @@ async function toggleFee(id, month, value, selectEl) {
     const row = feeRows.find(r => r.ID === id);
     if (row) row[month] = value;
     selectEl.classList.add(value === 'Paid' ? 'is-paid' : 'is-pending');
-    showToast(`${month} fee marked ${value.toLowerCase()}.`, value === 'Paid' ? 'success' : 'warning');
+    showToast(`${month} fee marked ${value === 'Paid' ? 'paid' : 'not paid'}.`, value === 'Paid' ? 'success' : 'warning');
     renderFeeStats();
   } catch (err) {
     selectEl.value = value === 'Paid' ? 'Pending' : 'Paid';
@@ -135,7 +135,7 @@ async function toggleFee(id, month, value, selectEl) {
 
 function exportFeesCsv() {
   const header = ['ID', 'Name', ...MONTHS_FULL];
-  const rows = feeRows.map(r => [r.ID, r.Name, ...MONTHS_FULL.map(m => r[m] === 'Paid' ? 'Paid' : 'Pending')]);
+  const rows = feeRows.map(r => [r.ID, r.Name, ...MONTHS_FULL.map(m => r[m] === 'Paid' ? 'Paid' : 'Not Paid')]);
   const csv = arrayToCsv([header, ...rows]);
   downloadBlob(csv, `fees-${new Date().getFullYear()}.csv`, 'text/csv');
   showToast('Fee report exported.', 'success');

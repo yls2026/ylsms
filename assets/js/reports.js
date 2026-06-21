@@ -45,7 +45,7 @@ function buildAttendanceDataset() {
 
 function buildFeesDataset() {
   const headers = ['ID', 'Name', ...MONTHS_FULL];
-  const rows = reportFees.map(r => [r.ID, r.Name, ...MONTHS_FULL.map(m => r[m] === 'Paid' ? 'Paid' : 'Pending')]);
+  const rows = reportFees.map(r => [r.ID, r.Name, ...MONTHS_FULL.map(m => r[m] === 'Paid' ? 'Paid' : 'Not Paid')]);
   return { headers, rows };
 }
 
@@ -127,10 +127,10 @@ function exportReport(type, format) {
     doc.text(`Generated ${new Date().toLocaleDateString('en-GB')}`, 14, 30);
 
     // "Positive" words get a green tint, "negative" words get a red tint —
-    // makes Attendance (Present/Absent) and Fees (Paid/Pending) reports
+    // makes Attendance (Present/Absent) and Fees (Paid/Not Paid) reports
     // easy to scan at a glance instead of squinting at plain text.
     const POSITIVE_VALUES = ['Present', 'Paid'];
-    const NEGATIVE_VALUES = ['Absent', 'Pending'];
+    const NEGATIVE_VALUES = ['Absent', 'Not Paid'];
 
     doc.autoTable({
       head: [headers],
