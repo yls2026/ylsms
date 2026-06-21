@@ -45,7 +45,11 @@ function buildAttendanceDataset() {
 
 function buildFeesDataset() {
   const headers = ['ID', 'Name', ...MONTHS_FULL];
-  const rows = reportFees.map(r => [r.ID, r.Name, ...MONTHS_FULL.map(m => r[m] === 'Paid' ? 'Paid' : 'Not Paid')]);
+  const rows = reportFees.map(r => [r.ID, r.Name, ...MONTHS_FULL.map(m => {
+    if (r[m] === 'Paid') return 'Paid';
+    if (!r[m]) return 'Empty';
+    return 'Not Paid';
+  })]);
   return { headers, rows };
 }
 

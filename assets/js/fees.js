@@ -70,9 +70,28 @@ function getFilteredFeeRows() {
     const matchesSearch = !q || String(r.ID).toLowerCase().includes(q) || String(r.Name).toLowerCase().includes(q);
     if (!matchesSearch) return false;
     if (!status) return true;
+    if (status === '__EMPTY__') {
+      return month ? !r[month] : MONTHS_FULL.some(m => !r[m]);
+    }
     if (month) return r[month] === status;
     return MONTHS_FULL.some(m => r[m] === status);
   });
+}
+
+/**
+ * A Fees cell has 3 possible states:
+ * - "Paid"      → explicitly marked paid (green)
+ * - "Pending"   → explicitly marked not paid (red)
+ * - "" / blank  → no value at all in the sheet yet (white/neutral "Empty")
+ */
+function feeStatus(value) {
+  if (value === 'Paid') return 'Paid';
+  if (!value) return 'Empty';
+  return 'Pending';
+}
+
+function feeStatusClass(status) {
+  return status === 'Paid' ? 'is-paid' : status === 'Pending' ? 'is-pending' : 'is-empty';
 }
 
 function renderFeesTable() {
@@ -89,13 +108,14 @@ function renderFeesTable() {
 
   body.innerHTML = rows.map(r => {
     const monthCells = MONTHS_FULL.map(m => {
-      const status = r[m] === 'Paid' ? 'Paid' : 'Pending';
+      const status = feeStatus(r[m]);
       return `
         <td class="text-center">
-          <select class="fee-select ${status === 'Paid' ? 'is-paid' : 'is-pending'}" ${isAdmin() ? '' : 'disabled'}
+          <select class="fee-select ${feeStatusClass(status)}" data-prev="${r[m] || ''}" ${isAdmin() ? '' : 'disabled'}
             onchange="toggleFee('${escapeHtml(r.ID)}', '${m}', this.value, this)">
             <option value="Paid" ${status === 'Paid' ? 'selected' : ''}>Paid</option>
             <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Not Paid</option>
+            <option value="" ${status === 'Empty' ? 'selected' : ''}>Empty</option>
           </select>
         </td>`;
     }).join('');
@@ -110,23 +130,27 @@ function renderFeesTable() {
 }
 
 async function toggleFee(id, month, value, selectEl) {
+  const previousValue = selectEl.dataset.prev || '';
   if (!isAdmin()) {
-    selectEl.value = value === 'Paid' ? 'Pending' : 'Paid';
+    selectEl.value = previousValue;
     showToast('Please log in as Admin to mark fee status.', 'warning');
     return;
   }
   selectEl.disabled = true;
-  selectEl.classList.remove('is-paid', 'is-pending');
+  selectEl.classList.remove('is-paid', 'is-pending', 'is-empty');
   try {
     await Api.saveFees(id, month, value);
     const row = feeRows.find(r => r.ID === id);
     if (row) row[month] = value;
-    selectEl.classList.add(value === 'Paid' ? 'is-paid' : 'is-pending');
-    showToast(`${month} fee marked ${value === 'Paid' ? 'paid' : 'not paid'}.`, value === 'Paid' ? 'success' : 'warning');
+    selectEl.dataset.prev = value;
+    const status = feeStatus(value);
+    selectEl.classList.add(feeStatusClass(status));
+    const label = status === 'Paid' ? 'paid' : status === 'Pending' ? 'not paid' : 'empty';
+    showToast(`${month} fee marked ${label}.`, status === 'Paid' ? 'success' : status === 'Pending' ? 'warning' : 'info');
     renderFeeStats();
   } catch (err) {
-    selectEl.value = value === 'Paid' ? 'Pending' : 'Paid';
-    selectEl.classList.add(value === 'Paid' ? 'is-pending' : 'is-paid');
+    selectEl.value = previousValue;
+    selectEl.classList.add(feeStatusClass(feeStatus(previousValue)));
     showToast('Could not save fee status: ' + err.message, 'danger');
   } finally {
     selectEl.disabled = false;
@@ -135,7 +159,7 @@ async function toggleFee(id, month, value, selectEl) {
 
 function exportFeesCsv() {
   const header = ['ID', 'Name', ...MONTHS_FULL];
-  const rows = feeRows.map(r => [r.ID, r.Name, ...MONTHS_FULL.map(m => r[m] === 'Paid' ? 'Paid' : 'Not Paid')]);
+  const rows = feeRows.map(r => [r.ID, r.Name, ...MONTHS_FULL.map(m => feeStatus(r[m]) === 'Pending' ? 'Not Paid' : feeStatus(r[m]))]);
   const csv = arrayToCsv([header, ...rows]);
   downloadBlob(csv, `fees-${new Date().getFullYear()}.csv`, 'text/csv');
   showToast('Fee report exported.', 'success');

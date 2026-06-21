@@ -465,6 +465,7 @@ select.fee-select {
 }
 select.fee-select.is-paid { background: var(--success-bg); color: var(--success); }
 select.fee-select.is-pending { background: var(--danger-bg); color: var(--danger); }
+select.fee-select.is-empty { background: #ffffff; color: var(--text-muted); border-color: var(--border); }
 
 /* ============================================================================
    FORMS

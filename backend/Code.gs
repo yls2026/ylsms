@@ -382,7 +382,7 @@ function getFees() {
 }
 
 function updateFees(data) {
-  // data: { id, month, value }  -- value is "Paid" | "Pending"
+  // data: { id, month, value } -- value is "Paid" | "Pending" | "" (blank/Empty)
   if (!data.id || !data.month) throw new Error('id and month are required.');
   var sheet = getSheet_(SHEET_FEES, FEES_HEADERS);
   var rowIndex = findRowById_(sheet, data.id);
@@ -391,8 +391,16 @@ function updateFees(data) {
   var colIndex = FEES_HEADERS.indexOf(data.month) + 1;
   if (colIndex < 1) throw new Error('Invalid month: ' + data.month);
 
-  sheet.getRange(rowIndex, colIndex).setValue(data.value === 'Paid' ? 'Paid' : 'Pending');
-  return { id: data.id, month: data.month, value: data.value, saved: true };
+  var cellValue;
+  if (data.value === 'Paid') {
+    cellValue = 'Paid';
+  } else if (!data.value) {
+    cellValue = ''; // Empty — leaves the cell genuinely blank, not a text value
+  } else {
+    cellValue = 'Pending';
+  }
+  sheet.getRange(rowIndex, colIndex).setValue(cellValue);
+  return { id: data.id, month: data.month, value: cellValue, saved: true };
 }
 
 // ---------------------------------------------------------------------------
