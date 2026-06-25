@@ -223,12 +223,21 @@ const Api = (() => {
     return apiPost('changeAdminPassword', { newPassword });
   }
 
+  async function startNewYear(year) {
+    if (CONFIG.DEMO_MODE) {
+      demoAttendance.forEach(r => MONTHS.forEach(m => { r[m] = ''; }));
+      demoFees.forEach(r => MONTHS.forEach(m => { r[m] = ''; }));
+      return { ok: true, year };
+    }
+    return apiPost('startNewYear', { year });
+  }
+
   return {
     fetchMembers, addMember, updateMember, deleteMember,
     fetchAttendance, saveAttendance,
     fetchFees, saveFees,
     fetchSettings, saveSettings,
-    adminLogin, adminLogout, changeAdminPassword,
+    adminLogin, adminLogout, changeAdminPassword, startNewYear,
     MONTHS
   };
 })();

@@ -47,7 +47,8 @@ var ADMIN_SESSION_SECONDS = 6 * 60 * 60; // 6 hours
 var WRITE_ACTIONS_REQUIRING_AUTH = [
   'addMember', 'updateMember', 'deleteMember',
   'updateAttendance', 'updateFees',
-  'saveSettings', 'changeAdminPassword'
+  'saveSettings', 'changeAdminPassword',
+  'startNewYear'
 ];
 
 // ---------------------------------------------------------------------------
@@ -126,6 +127,9 @@ function doPost(e) {
         break;
       case 'changeAdminPassword':
         result = changeAdminPassword(data, body.token);
+        break;
+      case 'startNewYear':
+        result = startNewYear(data);
         break;
       default:
         return jsonResponse({ success: false, error: 'Unknown or missing action: ' + action });
@@ -511,4 +515,47 @@ function changeAdminPassword(data, token) {
     sheet.appendRow(['adminPassword', newPassword]);
   }
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// START NEW YEAR
+// ---------------------------------------------------------------------------
+//
+// Attendance/Fees have no "year" column — the Jan-Dec columns always mean
+// "this year". To roll over into a new year: copy the current Attendance
+// and Fees sheets into dated archive sheets (e.g. "Attendance 2026"), then
+// wipe the Jan-Dec values on the live sheets (keeping every member's ID
+// and Name) so the new year starts blank/Empty for everyone.
+
+function startNewYear(data) {
+  var year = (data && data.year) ? String(data.year).trim() : String(new Date().getFullYear());
+  if (!/^\d{4}$/.test(year)) throw new Error('Please provide a valid 4-digit year.');
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  archiveSheet_(ss, SHEET_ATTENDANCE, 'Attendance ' + year);
+  archiveSheet_(ss, SHEET_FEES, 'Fees ' + year);
+
+  clearMonthlyValues_(SHEET_ATTENDANCE, ATTENDANCE_HEADERS);
+  clearMonthlyValues_(SHEET_FEES, FEES_HEADERS);
+
+  return { ok: true, year: year };
+}
+
+function archiveSheet_(ss, sourceName, archiveName) {
+  if (ss.getSheetByName(archiveName)) {
+    throw new Error('An archive sheet named "' + archiveName + '" already exists. Rename or delete it first if you want to redo this.');
+  }
+  var source = ss.getSheetByName(sourceName);
+  if (!source) throw new Error('Sheet not found: ' + sourceName);
+  var copy = source.copyTo(ss);
+  copy.setName(archiveName);
+}
+
+function clearMonthlyValues_(sheetName, headers) {
+  var sheet = getSheet_(sheetName, headers);
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return; // no member rows yet
+  var monthStartCol = 3; // 1 = ID, 2 = Name, 3..14 = Jan..Dec
+  var numMonthCols = headers.length - 2;
+  sheet.getRange(2, monthStartCol, lastRow - 1, numMonthCols).clearContent();
 }
