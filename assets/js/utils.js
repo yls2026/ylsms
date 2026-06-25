@@ -5,6 +5,28 @@
  */
 
 // ---------------------------------------------------------------------------
+// ATTENDANCE STATUS (shared by dashboard.js, attendance.js, reports.js)
+// ---------------------------------------------------------------------------
+
+/**
+ * An Attendance cell has 3 possible states:
+ * - "Present" → explicitly marked present (✅ green)
+ * - "Absent"  → explicitly marked absent (❎ red)
+ * - ""/blank  → no value yet (white "Empty" — also forced for any month
+ *               that hasn't happened yet)
+ * Accepts legacy boolean TRUE/FALSE values from older sheet rows too.
+ */
+function attendanceStatus(value) {
+  if (value === true || value === 'true' || value === 'TRUE' || value === 'Present') return 'Present';
+  if (value === false || value === 'false' || value === 'FALSE' || value === 'Absent') return 'Absent';
+  return 'Empty';
+}
+
+function attendanceStatusClass(status) {
+  return status === 'Present' ? 'is-present' : status === 'Absent' ? 'is-absent' : 'is-empty';
+}
+
+// ---------------------------------------------------------------------------
 // TOASTS / ALERTS
 // ---------------------------------------------------------------------------
 

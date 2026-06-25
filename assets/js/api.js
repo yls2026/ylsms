@@ -31,14 +31,14 @@ const Api = (() => {
   const demoAttendance = demoMembers.map((m, i) => ({
     ID: m.ID,
     Name: m.Name,
-    ...blankMonthObject(false),
-    ...(i % 2 === 0 ? { Jan: true, Feb: true, Mar: true } : { Jan: true, Feb: false, Mar: true })
+    ...blankMonthObject(''),
+    ...(i % 2 === 0 ? { Jan: 'Present', Feb: 'Present', Mar: 'Present' } : { Jan: 'Present', Feb: 'Absent', Mar: 'Present' })
   }));
 
   const demoFees = demoMembers.map((m, i) => ({
     ID: m.ID,
     Name: m.Name,
-    ...blankMonthObject('Pending'),
+    ...blankMonthObject(''),
     ...(i % 2 === 0 ? { Jan: 'Paid', Feb: 'Paid' } : { Jan: 'Paid', Feb: 'Pending' })
   }));
 
@@ -113,8 +113,8 @@ const Api = (() => {
       const id = member.ID && member.ID.trim() ? member.ID : generateDemoId();
       const record = { ...member, ID: id, Phone: normalizePhone(member.Phone), WhatsApp: normalizePhone(member.WhatsApp || member.Phone) };
       demoMembers.push(record);
-      demoAttendance.push({ ID: id, Name: member.Name, ...blankMonthObject(false) });
-      demoFees.push({ ID: id, Name: member.Name, ...blankMonthObject('Pending') });
+      demoAttendance.push({ ID: id, Name: member.Name, ...blankMonthObject('') });
+      demoFees.push({ ID: id, Name: member.Name, ...blankMonthObject('') });
       return record;
     }
     return apiPost('addMember', member);

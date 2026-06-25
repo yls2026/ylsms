@@ -49,7 +49,7 @@ function renderStatCards(members, attendance, fees) {
 
 function percentTrue(rows, month) {
   if (!rows.length) return '0%';
-  const present = rows.filter(r => r[month] === true || r[month] === 'true' || r[month] === 'TRUE').length;
+  const present = rows.filter(r => attendanceStatus(r[month]) === 'Present').length;
   return Math.round((present / rows.length) * 100) + '%';
 }
 

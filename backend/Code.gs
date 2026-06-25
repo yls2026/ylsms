@@ -268,10 +268,10 @@ function addMember(data) {
 
   // Create matching rows in Attendance and Fees so every member appears there.
   var attSheet = getSheet_(SHEET_ATTENDANCE, ATTENDANCE_HEADERS);
-  attSheet.appendRow([id, data.Name].concat(MONTHS.map(function () { return false; })));
+  attSheet.appendRow([id, data.Name].concat(MONTHS.map(function () { return ''; })));
 
   var feeSheet = getSheet_(SHEET_FEES, FEES_HEADERS);
-  feeSheet.appendRow([id, data.Name].concat(MONTHS.map(function () { return 'Pending'; })));
+  feeSheet.appendRow([id, data.Name].concat(MONTHS.map(function () { return ''; })));
 
   return { ID: id, Position: row[1], Name: row[2], Birthday: row[3], Gender: row[4], Address: row[5], Email: row[6], Phone: row[7], WhatsApp: row[8] };
 }
@@ -359,7 +359,8 @@ function getAttendance() {
 }
 
 function updateAttendance(data) {
-  // data: { id, month, value }  -- month is e.g. "Jan", value is boolean
+  // data: { id, month, value } -- value is "Present" | "Absent" | "" (blank/Empty)
+  // Also accepts legacy boolean true/false for backward compatibility.
   if (!data.id || !data.month) throw new Error('id and month are required.');
   var sheet = getSheet_(SHEET_ATTENDANCE, ATTENDANCE_HEADERS);
   var rowIndex = findRowById_(sheet, data.id);
@@ -368,8 +369,22 @@ function updateAttendance(data) {
   var colIndex = ATTENDANCE_HEADERS.indexOf(data.month) + 1;
   if (colIndex < 1) throw new Error('Invalid month: ' + data.month);
 
-  sheet.getRange(rowIndex, colIndex).setValue(data.value === true || data.value === 'true');
-  return { id: data.id, month: data.month, value: data.value, saved: true };
+  var monthIndex = MONTHS.indexOf(data.month);
+  var currentMonthIndex = new Date().getMonth(); // 0 = Jan ... 11 = Dec
+  if (monthIndex > currentMonthIndex) {
+    throw new Error('Cannot mark attendance for a future month.');
+  }
+
+  var cellValue;
+  if (data.value === true || data.value === 'true' || data.value === 'Present') {
+    cellValue = 'Present';
+  } else if (data.value === false || data.value === 'false' || data.value === 'Absent') {
+    cellValue = 'Absent';
+  } else {
+    cellValue = ''; // Empty — genuinely blank cell
+  }
+  sheet.getRange(rowIndex, colIndex).setValue(cellValue);
+  return { id: data.id, month: data.month, value: cellValue, saved: true };
 }
 
 // ---------------------------------------------------------------------------

@@ -486,18 +486,38 @@ select.fee-select.is-empty { background: #ffffff; color: var(--text-muted); bord
 .input-group-text { background: #fdf8f3; border-color: var(--border); color: var(--primary); font-weight: 600; }
 
 /* ============================================================================
-   ATTENDANCE GRID CHECKBOX
+   ATTENDANCE GRID DROPDOWN (Present / Absent / Empty)
    ========================================================================= */
 
-.attendance-checkbox {
-  width: 22px;
-  height: 22px;
+select.attendance-select {
+  border: none;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.32rem 1.6rem 0.32rem 0.7rem;
   cursor: pointer;
-  accent-color: var(--success);
+}
+select.attendance-select.is-present { background: var(--success-bg); color: var(--success); }
+select.attendance-select.is-absent { background: var(--danger-bg); color: var(--danger); }
+select.attendance-select.is-empty { background: #ffffff; color: var(--text-muted); border-color: var(--border); }
+select.attendance-select:disabled { cursor: not-allowed; opacity: 0.55; }
+
+.attendance-future-cell {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  opacity: 0.6;
 }
 
-.attendance-cell.is-present { background: var(--success-bg); }
-.attendance-cell.is-absent { background: var(--danger-bg); }
+.attendance-footer-row td {
+  background: #fdf8f3;
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+}
+.attendance-footer-label {
+  text-align: right;
+  padding-right: 0.75rem !important;
+  color: var(--primary);
+}
 
 /* ============================================================================
    MISC: empty states, loaders, demo banner, animations

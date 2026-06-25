@@ -29,14 +29,21 @@ async function loadAttendance() {
   }
 }
 
-function isPresent(val) {
-  return val === true || val === 'true' || val === 'TRUE';
+/** Index (0 = Jan … 11 = Dec) of the current real-world month. */
+function currentMonthIndex() {
+  return new Date().getMonth();
+}
+
+function isFutureMonth(monthAbbrev) {
+  return MONTHS_FULL.indexOf(monthAbbrev) > currentMonthIndex();
 }
 
 function renderAttendanceTable() {
   const body = document.getElementById('attendanceBody');
   const empty = document.getElementById('attendanceEmpty');
+  const footer = document.getElementById('attendanceFooter');
   const q = document.getElementById('attendanceSearch').value.trim().toLowerCase();
+  const curMonth = currentMonthIndex();
 
   const rows = attendanceRows.filter(r =>
     !q || String(r.ID).toLowerCase().includes(q) || String(r.Name).toLowerCase().includes(q)
@@ -44,19 +51,34 @@ function renderAttendanceTable() {
 
   if (!rows.length) {
     body.innerHTML = '';
+    if (footer) footer.innerHTML = '';
     empty.classList.remove('d-none');
     return;
   }
   empty.classList.add('d-none');
 
   body.innerHTML = rows.map(r => {
-    const presentCount = MONTHS_FULL.filter(m => isPresent(r[m])).length;
-    const rate = Math.round((presentCount / 12) * 100);
-    const monthCells = MONTHS_FULL.map(m => `
-      <td class="text-center attendance-cell ${isPresent(r[m]) ? 'is-present' : 'is-absent'}">
-        <input type="checkbox" class="attendance-checkbox" ${isPresent(r[m]) ? 'checked' : ''} ${isAdmin() ? '' : 'disabled'}
-          onchange="toggleAttendance('${escapeHtml(r.ID)}', '${m}', this.checked, this)">
-      </td>`).join('');
+    const elapsedMonths = MONTHS_FULL.slice(0, curMonth + 1);
+    const presentCount = elapsedMonths.filter(m => attendanceStatus(r[m]) === 'Present').length;
+    const rate = elapsedMonths.length ? Math.round((presentCount / elapsedMonths.length) * 100) : 0;
+
+    const monthCells = MONTHS_FULL.map((m, idx) => {
+      if (idx > curMonth) {
+        // Upcoming month — always shown blank and locked, regardless of
+        // any leftover value, since attendance can't be taken yet.
+        return `<td class="text-center attendance-future-cell" title="Upcoming month">—</td>`;
+      }
+      const status = attendanceStatus(r[m]);
+      return `
+        <td class="text-center">
+          <select class="attendance-select ${attendanceStatusClass(status)}" data-prev="${status === 'Empty' ? '' : status}" ${isAdmin() ? '' : 'disabled'}
+            onchange="toggleAttendance('${escapeHtml(r.ID)}', '${m}', this.value, this)">
+            <option value="Present" ${status === 'Present' ? 'selected' : ''}>✅ Present</option>
+            <option value="Absent" ${status === 'Absent' ? 'selected' : ''}>❎ Absent</option>
+            <option value="" ${status === 'Empty' ? 'selected' : ''}>Empty</option>
+          </select>
+        </td>`;
+    }).join('');
 
     return `
       <tr>
@@ -66,37 +88,83 @@ function renderAttendanceTable() {
         <td class="text-center"><span class="pill ${rate >= 75 ? 'pill-paid' : rate >= 40 ? 'pill-gold' : 'pill-pending'}">${rate}%</span></td>
       </tr>`;
   }).join('');
+
+  renderAttendanceFooter(rows, curMonth);
 }
 
-async function toggleAttendance(id, month, checked, checkboxEl) {
+/**
+ * Month-end summary footer: for every month that has already happened,
+ * shows how many of the (currently filtered) members were marked Present
+ * and what percentage of the group that is. Upcoming months show "—".
+ */
+function renderAttendanceFooter(rows, curMonth) {
+  const footer = document.getElementById('attendanceFooter');
+  if (!footer) return;
+
+  const totalCells = MONTHS_FULL.map((m, idx) => {
+    if (idx > curMonth) return `<td class="text-center attendance-future-cell">—</td>`;
+    const count = rows.filter(r => attendanceStatus(r[m]) === 'Present').length;
+    return `<td class="text-center">${count} / ${rows.length}</td>`;
+  }).join('');
+
+  const percentCells = MONTHS_FULL.map((m, idx) => {
+    if (idx > curMonth) return `<td class="text-center attendance-future-cell">—</td>`;
+    const count = rows.filter(r => attendanceStatus(r[m]) === 'Present').length;
+    const pct = rows.length ? Math.round((count / rows.length) * 100) : 0;
+    return `<td class="text-center">${pct}%</td>`;
+  }).join('');
+
+  footer.innerHTML = `
+    <tr class="attendance-footer-row">
+      <td class="cell-sticky attendance-footer-label" colspan="2" style="left:0;">Total Present</td>
+      ${totalCells}
+      <td></td>
+    </tr>
+    <tr class="attendance-footer-row">
+      <td class="cell-sticky attendance-footer-label" colspan="2" style="left:0;">Attendance %</td>
+      ${percentCells}
+      <td></td>
+    </tr>`;
+}
+
+async function toggleAttendance(id, month, value, selectEl) {
+  const previousValue = selectEl.dataset.prev || '';
   if (!isAdmin()) {
-    checkboxEl.checked = !checked;
+    selectEl.value = previousValue;
     showToast('Please log in as Admin to mark attendance.', 'warning');
     return;
   }
   const statusEl = document.getElementById('attendanceSaveStatus');
-  checkboxEl.disabled = true;
+  selectEl.disabled = true;
+  selectEl.classList.remove('is-present', 'is-absent', 'is-empty');
   try {
-    await Api.saveAttendance(id, month, checked);
+    await Api.saveAttendance(id, month, value);
     const row = attendanceRows.find(r => r.ID === id);
-    if (row) row[month] = checked;
+    if (row) row[month] = value;
+    selectEl.dataset.prev = value;
+    selectEl.classList.add(attendanceStatusClass(attendanceStatus(value)));
     statusEl.innerHTML = '<i class="bi bi-check-circle-fill"></i> Saved';
     setTimeout(() => { statusEl.innerHTML = ''; }, 1500);
-    // refresh just the rate badge for this row without a full re-render
+    // re-render so the Rate column and month-end totals reflect the change
     renderAttendanceTable();
   } catch (err) {
-    checkboxEl.checked = !checked;
+    selectEl.value = previousValue;
+    selectEl.classList.add(attendanceStatusClass(attendanceStatus(previousValue)));
     showToast('Could not save attendance: ' + err.message, 'danger');
   } finally {
-    checkboxEl.disabled = false;
+    selectEl.disabled = false;
   }
 }
 
 function exportAttendanceCsv() {
+  const curMonth = currentMonthIndex();
+  const elapsedMonths = MONTHS_FULL.slice(0, curMonth + 1);
   const header = ['ID', 'Name', ...MONTHS_FULL, 'Rate %'];
   const rows = attendanceRows.map(r => {
-    const presentCount = MONTHS_FULL.filter(m => isPresent(r[m])).length;
-    return [r.ID, r.Name, ...MONTHS_FULL.map(m => isPresent(r[m]) ? 'Present' : 'Absent'), Math.round((presentCount / 12) * 100)];
+    const presentCount = elapsedMonths.filter(m => attendanceStatus(r[m]) === 'Present').length;
+    const rate = elapsedMonths.length ? Math.round((presentCount / elapsedMonths.length) * 100) : 0;
+    const monthValues = MONTHS_FULL.map((m, idx) => idx > curMonth ? '' : attendanceStatus(r[m]).replace('Empty', ''));
+    return [r.ID, r.Name, ...monthValues, rate];
   });
   const csv = arrayToCsv([header, ...rows]);
   downloadBlob(csv, `attendance-${new Date().getFullYear()}.csv`, 'text/csv');

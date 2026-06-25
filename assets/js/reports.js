@@ -36,9 +36,17 @@ function buildMemberDataset() {
 
 function buildAttendanceDataset() {
   const headers = ['ID', 'Name', ...MONTHS_FULL, 'Rate %'];
+  const curMonth = new Date().getMonth();
+  const elapsedMonths = MONTHS_FULL.slice(0, curMonth + 1);
   const rows = reportAttendance.map(r => {
-    const present = MONTHS_FULL.filter(m => r[m] === true || r[m] === 'true' || r[m] === 'TRUE').length;
-    return [r.ID, r.Name, ...MONTHS_FULL.map(m => (r[m] === true || r[m] === 'true' || r[m] === 'TRUE') ? 'Present' : 'Absent'), Math.round((present / 12) * 100)];
+    const present = elapsedMonths.filter(m => attendanceStatus(r[m]) === 'Present').length;
+    const rate = elapsedMonths.length ? Math.round((present / elapsedMonths.length) * 100) : 0;
+    const monthValues = MONTHS_FULL.map((m, idx) => {
+      if (idx > curMonth) return ''; // upcoming month — left genuinely blank
+      const status = attendanceStatus(r[m]);
+      return status === 'Empty' ? '' : status;
+    });
+    return [r.ID, r.Name, ...monthValues, rate];
   });
   return { headers, rows };
 }
